@@ -55,6 +55,10 @@ toggle_auto_scan={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":9)]
 }
+jump={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":69)]
+}
 
 [rendering]
 

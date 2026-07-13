@@ -8,6 +8,7 @@ Open this folder as a Godot project and run it. The demo room contains only coll
 
 - **Hold Click / Space** — continuously scan while held
 - **WASD** — walk with gravity and collision
+- **E** — jump while grounded
 - **Mouse** — look
 - **C** — erase all painted points
 - **Esc** — release/capture the mouse

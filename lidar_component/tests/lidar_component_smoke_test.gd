@@ -74,6 +74,14 @@ func _run() -> void:
 	if floor_collision == null:
 		_fail("The player capsule should collide with the room floor.")
 		return
+	var jump := InputEventAction.new()
+	jump.action = "jump"
+	jump.pressed = true
+	demo._input(jump)
+	await physics_frame
+	if demo_player.velocity.y <= 0.0:
+		_fail("The grounded player should receive upward velocity when jumping.")
+		return
 	var demo_scanner = demo.get_node("Player/Camera3D/LidarGun/LidarComponent3D")
 	var press := InputEventAction.new()
 	press.action = "scan"

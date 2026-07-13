@@ -176,7 +176,7 @@ offset_left = 27.0
 offset_top = 62.0
 offset_right = 680.0
 offset_bottom = 122.0
-text = "HOLD CLICK / SPACE  scan\nWASD  walk     MOUSE  look     C  clear     ESC  release mouse"
+text = "HOLD CLICK / SPACE  scan\nWASD  walk     E  jump     MOUSE  look     C  clear     ESC  release mouse"
 label_settings = SubResource("LabelMain")
 
 [node name="Status" type="Label" parent="UI"]

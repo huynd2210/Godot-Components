@@ -10,10 +10,12 @@ extends Node3D
 var look_sensitivity := 0.0022
 var move_speed := 5.0
 var ground_acceleration := 24.0
+var jump_velocity := 5.2
 var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 var pitch := 0.0
 var last_hits := 0
 var last_rays := 0
+var jump_requested := false
 
 
 func _ready() -> void:
@@ -31,10 +33,13 @@ func _physics_process(delta: float) -> void:
 	var wish_direction := (player.global_basis * Vector3(input_2d.x, 0.0, input_2d.y)).normalized()
 	player.velocity.x = move_toward(player.velocity.x, wish_direction.x * move_speed, ground_acceleration * delta)
 	player.velocity.z = move_toward(player.velocity.z, wish_direction.z * move_speed, ground_acceleration * delta)
-	if not player.is_on_floor():
+	if player.is_on_floor() and jump_requested:
+		player.velocity.y = jump_velocity
+	elif not player.is_on_floor():
 		player.velocity.y -= gravity * delta
 	else:
 		player.velocity.y = -0.1
+	jump_requested = false
 	player.move_and_slide()
 	_update_status(last_hits, last_rays)
 
@@ -54,6 +59,8 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_released("scan"):
 		scanner.auto_scan = false
 		_update_status(last_hits, last_rays)
+	elif event.is_action_pressed("jump"):
+		jump_requested = true
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_C:
