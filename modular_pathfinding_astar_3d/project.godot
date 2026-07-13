@@ -1,0 +1,15 @@
+; Engine configuration file.
+; It is best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section]
+;   param=value
+
+config_version=5
+
+[application]
+
+config/name="Modular Pathfinding 3D"
+run/main_scene="res://examples/grid_pathfinding_3d_demo.tscn"
+config/features=PackedStringArray("4.2")
