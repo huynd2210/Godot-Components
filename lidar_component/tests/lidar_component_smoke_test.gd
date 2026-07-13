@@ -70,6 +70,9 @@ func _run() -> void:
 	if not demo_player.is_on_floor():
 		_fail("Gravity should settle the demo player on the floor.")
 		return
+	if demo.gravity < 20.0:
+		_fail("The demo should use strong, non-floaty gravity.")
+		return
 	var floor_collision = demo_player.move_and_collide(Vector3.DOWN * 0.25, true)
 	if floor_collision == null:
 		_fail("The player capsule should collide with the room floor.")
@@ -96,6 +99,23 @@ func _run() -> void:
 	demo._input(release)
 	if demo_scanner.auto_scan:
 		_fail("Releasing the scan action should stop continuous scanning.")
+		return
+	var normal_beams: int = demo_scanner.beams_per_scan
+	var normal_fov: float = demo_scanner.horizontal_fov_degrees
+	var focus := InputEventAction.new()
+	focus.action = "focus_scan"
+	focus.pressed = true
+	demo._input(focus)
+	if not demo_scanner.auto_scan:
+		_fail("Holding focus scan should continuously scan.")
+		return
+	if demo_scanner.beams_per_scan <= normal_beams or demo_scanner.horizontal_fov_degrees >= normal_fov:
+		_fail("Focus scan should use more beams across a narrower cone.")
+		return
+	focus.pressed = false
+	demo._input(focus)
+	if demo_scanner.auto_scan or demo_scanner.beams_per_scan != normal_beams:
+		_fail("Releasing focus scan should stop and restore the wide scan settings.")
 		return
 	demo.queue_free()
 	await process_frame

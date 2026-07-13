@@ -47,6 +47,10 @@ scan={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":32), Object(InputEventMouseButton,"button_index":1)]
 }
+focus_scan={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":2)]
+}
 clear_scan={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":67)]

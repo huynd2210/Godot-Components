@@ -10,18 +10,34 @@ extends Node3D
 var look_sensitivity := 0.0022
 var move_speed := 5.0
 var ground_acceleration := 24.0
-var jump_velocity := 5.2
-var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+var jump_velocity := 7.0
+var gravity_multiplier := 2.4
+var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)) * gravity_multiplier
 var pitch := 0.0
 var last_hits := 0
 var last_rays := 0
 var jump_requested := false
+var normal_scan_held := false
+var focus_scan_held := false
+
+var focused_beams_per_scan := 300
+var focused_horizontal_fov := 16.0
+var focused_vertical_fov := 12.0
+var focused_scans_per_second := 18.0
+var normal_beams_per_scan := 100
+var normal_horizontal_fov := 78.0
+var normal_vertical_fov := 56.0
+var normal_scans_per_second := 12.0
 
 
 func _ready() -> void:
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	scanner.scan_finished.connect(_on_scan_finished)
+	normal_beams_per_scan = scanner.beams_per_scan
+	normal_horizontal_fov = scanner.horizontal_fov_degrees
+	normal_vertical_fov = scanner.vertical_fov_degrees
+	normal_scans_per_second = scanner.scans_per_second
 	_update_status(0, scanner.beams_per_scan)
 
 
@@ -52,13 +68,17 @@ func _input(event: InputEvent) -> void:
 		pitch = clampf(pitch - event.relative.y * look_sensitivity, -1.5, 1.5)
 		camera.rotation.x = pitch
 	elif event.is_action_pressed("scan"):
-		if not scanner.auto_scan:
-			scanner.scan_once()
-		scanner.auto_scan = true
-		_update_status(0, scanner.beams_per_scan)
+		normal_scan_held = true
+		_apply_scan_state(true)
 	elif event.is_action_released("scan"):
-		scanner.auto_scan = false
-		_update_status(last_hits, last_rays)
+		normal_scan_held = false
+		_apply_scan_state(false)
+	elif event.is_action_pressed("focus_scan"):
+		focus_scan_held = true
+		_apply_scan_state(true)
+	elif event.is_action_released("focus_scan"):
+		focus_scan_held = false
+		_apply_scan_state(false)
 	elif event.is_action_pressed("jump"):
 		jump_requested = true
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -82,11 +102,31 @@ func _on_scan_finished(hits: int, rays: int) -> void:
 	_update_status(hits, rays)
 
 
+func _apply_scan_state(force_pulse: bool) -> void:
+	if focus_scan_held:
+		scanner.beams_per_scan = focused_beams_per_scan
+		scanner.horizontal_fov_degrees = focused_horizontal_fov
+		scanner.vertical_fov_degrees = focused_vertical_fov
+		scanner.scans_per_second = focused_scans_per_second
+	else:
+		scanner.beams_per_scan = normal_beams_per_scan
+		scanner.horizontal_fov_degrees = normal_horizontal_fov
+		scanner.vertical_fov_degrees = normal_vertical_fov
+		scanner.scans_per_second = normal_scans_per_second
+
+	var should_scan := normal_scan_held or focus_scan_held
+	if should_scan and (force_pulse or not scanner.auto_scan):
+		scanner.scan_once()
+	scanner.auto_scan = should_scan
+	_update_status(last_hits, last_rays)
+
+
 func _update_status(hits: int, rays: int) -> void:
-	status_label.text = "POINTS %05d    LAST %03d/%03d    SCANNER %s    GROUNDED %s" % [
+	var scan_mode := "FOCUS" if focus_scan_held else ("WIDE" if normal_scan_held else "IDLE")
+	status_label.text = "POINTS %05d    LAST %03d/%03d    MODE %s    GROUNDED %s" % [
 		scanner.point_count,
 		hits,
 		rays,
-		"ACTIVE" if scanner.auto_scan else "IDLE",
+		scan_mode,
 		"YES" if player.is_on_floor() else "NO",
 	]

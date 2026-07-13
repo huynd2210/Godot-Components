@@ -176,7 +176,7 @@ offset_left = 27.0
 offset_top = 62.0
 offset_right = 680.0
 offset_bottom = 122.0
-text = "HOLD CLICK / SPACE  scan\nWASD  walk     E  jump     MOUSE  look     C  clear     ESC  release mouse"
+text = "HOLD LMB / SPACE  wide scan     HOLD RMB  focused dense scan\nWASD  walk     E  jump     MOUSE  look     C  clear     ESC  release mouse"
 label_settings = SubResource("LabelMain")
 
 [node name="Status" type="Label" parent="UI"]
@@ -190,7 +190,7 @@ offset_right = -27.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
-text = "POINTS 00000    LAST 000/000    SCANNER IDLE    GROUNDED NO"
+text = "POINTS 00000    LAST 000/000    MODE IDLE    GROUNDED NO"
 label_settings = SubResource("LabelMain")
 
 [node name="Crosshair" type="Label" parent="UI"]
