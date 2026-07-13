@@ -58,8 +58,22 @@ func _run() -> void:
 		return
 	var demo := demo_scene.instantiate()
 	root.add_child(demo)
-	await physics_frame
-	await physics_frame
+	for i in 12:
+		await physics_frame
+	var demo_player = demo.get_node("Player")
+	if not demo_player is CharacterBody3D:
+		_fail("The demo player should be a CharacterBody3D.")
+		return
+	if not demo_player.has_node("CollisionShape3D") or demo_player.get_node("CollisionShape3D").shape == null:
+		_fail("The demo player should have a collision shape.")
+		return
+	if not demo_player.is_on_floor():
+		_fail("Gravity should settle the demo player on the floor.")
+		return
+	var floor_collision = demo_player.move_and_collide(Vector3.DOWN * 0.25, true)
+	if floor_collision == null:
+		_fail("The player capsule should collide with the room floor.")
+		return
 	var demo_scanner = demo.get_node("Player/Camera3D/LidarGun/LidarComponent3D")
 	var press := InputEventAction.new()
 	press.action = "scan"

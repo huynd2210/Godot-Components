@@ -7,7 +7,7 @@ A self-contained Godot 4 component for “blind world” games: it fires physics
 Open this folder as a Godot project and run it. The demo room contains only collision geometry, so the LiDAR points are the only way to see it.
 
 - **Hold Click / Space** — continuously scan while held
-- **WASD + Q/E** — fly
+- **WASD** — walk with gravity and collision
 - **Mouse** — look
 - **C** — erase all painted points
 - **Esc** — release/capture the mouse
@@ -54,6 +54,8 @@ func _ready() -> void:
 | `sound_enabled`, `scan_sound`, `clear_sound` | Generated defaults or your own replacement audio streams. |
 
 Every emission scatters fresh random rays across an elliptical cone. Holding the scan bind gradually fills in a sparse LiDAR image of the surrounding collision geometry.
+
+The included demo uses a `CharacterBody3D` with a capsule collider, project gravity, and `move_and_slide()`. The status display reports `GROUNDED YES` when the player is standing on collision geometry.
 
 ## Signal/API reference
 
