@@ -1,0 +1,245 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://examples/echolocation_demo.gd" id="1_demo"]
+[ext_resource type="Script" path="res://addons/echolocation_component/echolocation_component_3d.gd" id="2_echo"]
+
+[sub_resource type="BoxShape3D" id="BoxFloor"]
+size = Vector3(24, 0.3, 28)
+
+[sub_resource type="BoxShape3D" id="BoxWallWide"]
+size = Vector3(24, 10.8, 0.3)
+
+[sub_resource type="BoxShape3D" id="BoxWallSide"]
+size = Vector3(0.3, 10.8, 28)
+
+[sub_resource type="BoxShape3D" id="BoxCeilingFront"]
+size = Vector3(24, 0.3, 4)
+
+[sub_resource type="BoxShape3D" id="BoxCeilingMiddle"]
+size = Vector3(24, 0.3, 12)
+
+[sub_resource type="BoxShape3D" id="BoxCeilingBack"]
+size = Vector3(24, 0.3, 12)
+
+[sub_resource type="BoxShape3D" id="BoxPillar"]
+size = Vector3(2.2, 4.8, 2.2)
+
+[sub_resource type="BoxShape3D" id="BoxPillarTall"]
+size = Vector3(2.2, 8.5, 2.2)
+
+[sub_resource type="BoxShape3D" id="BoxPillarShort"]
+size = Vector3(3.2, 3, 3.2)
+
+[sub_resource type="BoxShape3D" id="BoxBeam"]
+size = Vector3(5.5, 0.7, 1.0)
+
+[sub_resource type="BoxShape3D" id="BoxHighBeam"]
+size = Vector3(9, 0.7, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxMesaMass"]
+size = Vector3(8, 5.5, 7)
+
+[sub_resource type="BoxShape3D" id="BoxMesaOverhang"]
+size = Vector3(4, 0.8, 7)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexMesaSlope"]
+points = PackedVector3Array(-2, -4, -3.5, -2, 4, -3.5, 2, -4, -3.5, -2, -4, 3.5, -2, 4, 3.5, 2, -4, 3.5)
+
+[sub_resource type="CapsuleShape3D" id="PlayerCapsule"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="Environment" id="EnvironmentDark"]
+background_mode = 1
+background_color = Color(0.001, 0.002, 0.003, 1)
+ambient_light_source = 3
+ambient_light_energy = 0.0
+
+[sub_resource type="LabelSettings" id="LabelMain"]
+font_size = 17
+font_color = Color(0.34, 1, 0.76, 0.96)
+outline_size = 4
+outline_color = Color(0, 0.035, 0.025, 0.95)
+
+[sub_resource type="LabelSettings" id="LabelTitle"]
+font_size = 27
+font_color = Color(0.78, 1, 0.9, 1)
+outline_size = 6
+outline_color = Color(0, 0.035, 0.025, 0.95)
+
+[node name="EcholocationDemo" type="Node3D"]
+script = ExtResource("1_demo")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("EnvironmentDark")
+
+[node name="Room" type="StaticBody3D" parent="."]
+
+[node name="Floor" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, -0.15, -6)
+shape = SubResource("BoxFloor")
+
+[node name="LowCeilingFront" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, 7, 6)
+shape = SubResource("BoxCeilingFront")
+
+[node name="HighCeilingMiddle" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, 10.5, -2)
+shape = SubResource("BoxCeilingMiddle")
+
+[node name="MidCeilingBack" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, 8.2, -14)
+shape = SubResource("BoxCeilingBack")
+
+[node name="BackWall" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, 5.4, -20)
+shape = SubResource("BoxWallWide")
+
+[node name="FrontWall" type="CollisionShape3D" parent="Room"]
+position = Vector3(0, 5.4, 8)
+shape = SubResource("BoxWallWide")
+
+[node name="LeftWall" type="CollisionShape3D" parent="Room"]
+position = Vector3(-12, 5.4, -6)
+shape = SubResource("BoxWallSide")
+
+[node name="RightWall" type="CollisionShape3D" parent="Room"]
+position = Vector3(12, 5.4, -6)
+shape = SubResource("BoxWallSide")
+
+[node name="PillarA" type="StaticBody3D" parent="."]
+position = Vector3(-4.8, 2.4, -7)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PillarA"]
+shape = SubResource("BoxPillar")
+
+[node name="PillarB" type="StaticBody3D" parent="."]
+position = Vector3(5.2, 4.25, -13)
+rotation = Vector3(0, 0.42, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PillarB"]
+shape = SubResource("BoxPillarTall")
+
+[node name="ShortTower" type="StaticBody3D" parent="."]
+position = Vector3(-7.2, 1.5, -12)
+rotation = Vector3(0, -0.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ShortTower"]
+shape = SubResource("BoxPillarShort")
+
+[node name="HighGantry" type="StaticBody3D" parent="."]
+
+[node name="OverheadBeam" type="CollisionShape3D" parent="HighGantry"]
+position = Vector3(0, 7.6, -7)
+rotation = Vector3(0, 0.18, 0)
+shape = SubResource("BoxHighBeam")
+
+[node name="CliffMesa" type="StaticBody3D" parent="."]
+
+[node name="MainUpperMass" type="CollisionShape3D" parent="CliffMesa"]
+position = Vector3(2.5, 6.25, -2)
+shape = SubResource("BoxMesaMass")
+
+[node name="LeftOverhang" type="CollisionShape3D" parent="CliffMesa"]
+position = Vector3(-3.5, 3.9, -2)
+shape = SubResource("BoxMesaOverhang")
+
+[node name="SlopedButtress" type="CollisionShape3D" parent="CliffMesa"]
+position = Vector3(8.5, 4, -2)
+shape = SubResource("ConvexMesaSlope")
+
+[node name="Archway" type="StaticBody3D" parent="."]
+
+[node name="LeftPost" type="CollisionShape3D" parent="Archway"]
+position = Vector3(-2.8, 2.4, -16)
+shape = SubResource("BoxPillar")
+
+[node name="RightPost" type="CollisionShape3D" parent="Archway"]
+position = Vector3(2.8, 2.4, -16)
+shape = SubResource("BoxPillar")
+
+[node name="TopBeam" type="CollisionShape3D" parent="Archway"]
+position = Vector3(0, 4.5, -16)
+shape = SubResource("BoxBeam")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(0, 0.05, 5)
+floor_snap_length = 0.25
+safe_margin = 0.04
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("PlayerCapsule")
+
+[node name="Camera3D" type="Camera3D" parent="Player"]
+position = Vector3(0, 1.55, 0)
+current = true
+near = 0.03
+far = 100.0
+
+[node name="EcholocationComponent3D" type="Node3D" parent="Player/Camera3D"]
+script = ExtResource("2_echo")
+scan_shape = 1
+grid_width = 96
+grid_height = 54
+sphere_face_resolution = 96
+sphere_face_overlap_degrees = 3.0
+horizontal_fov_degrees = 88.0
+vertical_fov_degrees = 58.0
+max_range = 42.0
+propagation_speed = 22.0
+outline_hold_time = 8.0
+fade_duration = 1.5
+point_size = 0.035
+echo_color = Color(0.2, 1, 0.7, 0.95)
+pulse_shell_opacity = 0.58
+pulse_shell_thickness = 0.55
+pulse_point_size = 0.13
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="UI"]
+offset_left = 27.0
+offset_top = 21.0
+offset_right = 600.0
+offset_bottom = 61.0
+text = "ECHOLOCATION // CONTOUR"
+label_settings = SubResource("LabelTitle")
+
+[node name="Instructions" type="Label" parent="UI"]
+offset_left = 30.0
+offset_top = 66.0
+offset_right = 900.0
+offset_bottom = 121.0
+text = "LEFT CLICK  emit 360 echo     WASD  walk     E  jump\nMOUSE  look around revealed world     C  clear     ESC  release mouse"
+label_settings = SubResource("LabelMain")
+
+[node name="Status" type="Label" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -51.0
+offset_right = -30.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "MODE CONE    CONTOURS 0000 / 0000    PULSE 000.0m    ECHO READY    GROUND CONTACT    COLLISION CLEAR"
+label_settings = SubResource("LabelMain")
+
+[node name="Crosshair" type="Label" parent="UI"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -16.0
+offset_right = 8.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "+"
+label_settings = SubResource("LabelMain")
+horizontal_alignment = 1
