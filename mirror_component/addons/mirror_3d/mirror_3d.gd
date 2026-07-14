@@ -9,6 +9,10 @@ extends Node3D
 signal reflection_ready
 signal source_camera_changed(camera: Camera3D)
 
+const MIRROR_GROUP := &"_mirror_3d_instances"
+const AUTO_LAYER_MIN := 3
+const AUTO_LAYER_MAX := 20
+
 @export_category("Reflection")
 @export var source_camera: Camera3D
 @export_range(64, 2048, 1) var texture_width := 512:
@@ -16,9 +20,18 @@ signal source_camera_changed(camera: Camera3D)
 		texture_width = maxi(value, 64)
 		_resize_viewport()
 @export_range(1, 32, 1) var update_every_n_frames := 1
-@export_range(1, 20, 1) var reflection_layer := 20:
+## Render layer reserved for this complete mirror. Zero assigns a unique layer
+## automatically. Facing mirrors need different assigned layers.
+@export_range(0, 20, 1) var reflection_layer := 0:
 	set(value):
-		reflection_layer = clampi(value, 1, 20)
+		reflection_layer = clampi(value, 0, 20)
+		if is_inside_tree():
+			_assign_reflection_layer()
+		_update_layer_masks()
+@export_flags_3d_render var reflection_extra_cull_mask := 0
+@export var reflect_other_mirrors := false:
+	set(value):
+		reflect_other_mirrors = value
 		_update_layer_masks()
 @export_range(0.001, 0.2, 0.001, "suffix:m") var near_plane_padding := 0.02
 @export_range(5.0, 1000.0, 1.0, "suffix:m") var reflection_far := 200.0
@@ -75,9 +88,12 @@ var _frame_material: StandardMaterial3D
 var _backing_material: StandardMaterial3D
 var _last_source_camera: Camera3D
 var _frame_counter := 0
+var _assigned_reflection_layer := AUTO_LAYER_MAX
 
 
 func _ready() -> void:
+	_assign_reflection_layer()
+	add_to_group(MIRROR_GROUP)
 	_ensure_visuals()
 	_update_geometry()
 	_update_materials()
@@ -123,6 +139,11 @@ func get_mirror_plane() -> Plane:
 func reflect_point(point: Vector3) -> Vector3:
 	var plane := get_mirror_plane()
 	return point - plane.normal * (2.0 * plane.distance_to(point))
+
+
+## Returns the actual per-instance layer. reflection_layer == 0 uses auto assignment.
+func get_assigned_reflection_layer() -> int:
+	return _assigned_reflection_layer
 
 
 func _resolve_source_camera() -> Camera3D:
@@ -184,7 +205,16 @@ func _sync_reflected_camera(camera: Camera3D) -> void:
 	_reflection_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	_reflection_camera.attributes = camera.attributes
 	_reflection_camera.environment = camera.environment
-	_reflection_camera.cull_mask = camera.cull_mask & ~(1 << (reflection_layer - 1))
+	var mask := camera.cull_mask | reflection_extra_cull_mask
+	var all_mirror_layers := _get_all_mirror_layers_mask()
+	if reflect_other_mirrors:
+		mask |= all_mirror_layers
+	else:
+		mask &= ~all_mirror_layers
+	# A reflected camera may see every other mirror, but never its own surface,
+	# frame, backing, or handle.
+	mask &= ~(1 << (_assigned_reflection_layer - 1))
+	_reflection_camera.cull_mask = mask
 
 
 func _ensure_visuals() -> void:
@@ -200,7 +230,7 @@ func _ensure_visuals() -> void:
 
 	var shader := Shader.new()
 	shader.code = """shader_type spatial;
-render_mode unshaded, cull_disabled;
+render_mode unshaded, cull_back;
 uniform sampler2D reflection_texture : source_color, filter_linear;
 void fragment() {
 	vec2 mirror_uv = vec2(1.0 - UV.x, UV.y);
@@ -272,11 +302,40 @@ func _update_materials() -> void:
 
 
 func _update_layer_masks() -> void:
+	var own_layer_mask := 1 << (_assigned_reflection_layer - 1)
 	for item in [_surface, _backing, _frame_top, _frame_bottom, _frame_left, _frame_right, _handle]:
 		if is_instance_valid(item):
-			item.layers = 1 << (reflection_layer - 1)
+			item.layers = own_layer_mask
 	if is_instance_valid(_reflection_camera):
-		_reflection_camera.cull_mask &= ~(1 << (reflection_layer - 1))
+		_reflection_camera.set_cull_mask_value(_assigned_reflection_layer, false)
+
+
+func _assign_reflection_layer() -> void:
+	if reflection_layer > 0:
+		_assigned_reflection_layer = reflection_layer
+		return
+	var used_layers := {}
+	if get_tree() != null:
+		for node in get_tree().get_nodes_in_group(MIRROR_GROUP):
+			if node != self and node is Mirror3D:
+				used_layers[(node as Mirror3D).get_assigned_reflection_layer()] = true
+	for candidate in range(AUTO_LAYER_MAX, AUTO_LAYER_MIN - 1, -1):
+		if not used_layers.has(candidate):
+			_assigned_reflection_layer = candidate
+			return
+	_assigned_reflection_layer = AUTO_LAYER_MAX
+	push_warning("Mirror3D ran out of unique auto reflection layers. Assign reflection_layer manually or reduce inter-reflecting mirrors.")
+
+
+func _get_all_mirror_layers_mask() -> int:
+	var mask := 1 << (_assigned_reflection_layer - 1)
+	if get_tree() == null:
+		return mask
+	for node in get_tree().get_nodes_in_group(MIRROR_GROUP):
+		if node is Mirror3D:
+			var layer := (node as Mirror3D).get_assigned_reflection_layer()
+			mask |= 1 << (layer - 1)
+	return mask
 
 
 func _resize_viewport() -> void:

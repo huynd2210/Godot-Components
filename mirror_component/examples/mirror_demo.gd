@@ -2,6 +2,8 @@ extends Node3D
 
 const HandheldMirrorScene := preload("res://addons/mirror_3d/handheld_mirror_3d.tscn")
 const MirrorScene := preload("res://addons/mirror_3d/mirror_3d.tscn")
+const BeanPlayerScene := preload("res://examples/bean_player_model.tscn")
+const PLAYER_REFLECTION_LAYER := 2
 
 var move_speed := 5.2
 var acceleration := 24.0
@@ -16,6 +18,8 @@ var camera: Camera3D
 var handheld_mirror: HandheldMirror3D
 var status_label: Label
 var hint_label: Label
+var facing_mirrors: Array[Mirror3D] = []
+var inter_mirror_reflections_enabled := true
 
 
 func _ready() -> void:
@@ -60,6 +64,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		handheld_mirror.reset_pose()
 	elif event.is_action_pressed("toggle_mirror"):
 		handheld_mirror.visible = not handheld_mirror.visible
+	elif event.is_action_pressed("toggle_recursive_mirrors"):
+		inter_mirror_reflections_enabled = not inter_mirror_reflections_enabled
+		for mirror in facing_mirrors:
+			mirror.reflect_other_mirrors = inter_mirror_reflections_enabled
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
 
@@ -121,6 +129,9 @@ func _build_player() -> void:
 	player.position = Vector3(0.3, 0.05, 5.2)
 	player.floor_snap_length = 0.25
 	add_child(player)
+	var bean_model := BeanPlayerScene.instantiate()
+	bean_model.name = "BeanPlayerModel"
+	player.add_child(bean_model)
 
 	var collision := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
@@ -136,10 +147,12 @@ func _build_player() -> void:
 	camera.current = true
 	camera.near = 0.03
 	camera.far = 200.0
+	camera.set_cull_mask_value(PLAYER_REFLECTION_LAYER, false)
 	player.add_child(camera)
 
 	handheld_mirror = HandheldMirrorScene.instantiate()
 	handheld_mirror.name = "HandheldMirror3D"
+	handheld_mirror.reflection_extra_cull_mask = 1 << (PLAYER_REFLECTION_LAYER - 1)
 	camera.add_child(handheld_mirror)
 
 
@@ -151,6 +164,7 @@ func _build_mirrors() -> void:
 	wall_mirror.mirror_size = Vector2(1.5, 2.2)
 	wall_mirror.frame_color = Color(0.78, 0.47, 0.14)
 	wall_mirror.texture_width = 512
+	wall_mirror.reflection_extra_cull_mask = 1 << (PLAYER_REFLECTION_LAYER - 1)
 	add_child(wall_mirror)
 
 	var standing_mirror: Mirror3D = MirrorScene.instantiate()
@@ -160,8 +174,38 @@ func _build_mirrors() -> void:
 	standing_mirror.mirror_size = Vector2(1.25, 2.35)
 	standing_mirror.frame_color = Color(0.08, 0.42, 0.46)
 	standing_mirror.texture_width = 448
+	standing_mirror.reflection_extra_cull_mask = 1 << (PLAYER_REFLECTION_LAYER - 1)
 	add_child(standing_mirror)
 	_add_box("StandingMirrorBase", Vector3(6.7, 0.12, -5.7), Vector3(1.8, 0.24, 0.75), Color(0.07, 0.28, 0.31), true)
+
+	# A throttled, lower-resolution pair demonstrates safe inter-mirror feedback.
+	var left_facing_mirror: Mirror3D = MirrorScene.instantiate()
+	left_facing_mirror.name = "FacingMirrorLeft"
+	left_facing_mirror.position = Vector3(-6.8, 1.55, 4.0)
+	left_facing_mirror.rotation_degrees.y = 90.0
+	left_facing_mirror.mirror_size = Vector2(1.2, 1.9)
+	left_facing_mirror.frame_color = Color(0.76, 0.18, 0.28)
+	left_facing_mirror.texture_width = 320
+	left_facing_mirror.update_every_n_frames = 2
+	left_facing_mirror.reflect_other_mirrors = true
+	left_facing_mirror.reflection_extra_cull_mask = 1 << (PLAYER_REFLECTION_LAYER - 1)
+	add_child(left_facing_mirror)
+	facing_mirrors.append(left_facing_mirror)
+
+	var right_facing_mirror: Mirror3D = MirrorScene.instantiate()
+	right_facing_mirror.name = "FacingMirrorRight"
+	right_facing_mirror.position = Vector3(6.8, 1.55, 4.0)
+	right_facing_mirror.rotation_degrees.y = -90.0
+	right_facing_mirror.mirror_size = Vector2(1.2, 1.9)
+	right_facing_mirror.frame_color = Color(0.25, 0.46, 0.92)
+	right_facing_mirror.texture_width = 320
+	right_facing_mirror.update_every_n_frames = 2
+	right_facing_mirror.reflect_other_mirrors = true
+	right_facing_mirror.reflection_extra_cull_mask = 1 << (PLAYER_REFLECTION_LAYER - 1)
+	add_child(right_facing_mirror)
+	facing_mirrors.append(right_facing_mirror)
+	_add_box("FacingMirrorLeftBase", Vector3(-6.8, 0.12, 4.0), Vector3(0.75, 0.24, 1.65), Color(0.32, 0.08, 0.12), true)
+	_add_box("FacingMirrorRightBase", Vector3(6.8, 0.12, 4.0), Vector3(0.75, 0.24, 1.65), Color(0.08, 0.16, 0.34), true)
 
 
 func _build_ui() -> void:
@@ -185,7 +229,7 @@ func _build_ui() -> void:
 
 	hint_label = Label.new()
 	hint_label.position = Vector2(28.0, 51.0)
-	hint_label.text = "WASD walk   SPACE jump   MOUSE look   hold RMB + MOUSE tilt mirror\nQ / E hold mirror left / right around corners   R reset   F hide   ESC release mouse"
+	hint_label.text = "WASD walk   SPACE jump   MOUSE look   hold RMB + MOUSE tilt mirror\nQ / E reach around corners   R reset   F hide   T facing-mirror feedback   ESC release mouse"
 	hint_label.add_theme_font_size_override("font_size", 15)
 	hint_label.add_theme_color_override("font_color", Color(0.72, 0.79, 0.86))
 	ui.add_child(hint_label)
@@ -215,10 +259,11 @@ func _update_status(corner_input: float) -> void:
 		mode = "EXTENDING RIGHT"
 	elif Input.is_action_pressed("mirror_control"):
 		mode = "TILTING"
-	status_label.text = "HAND MIRROR  %s    YAW %+04.0f deg    PITCH %+04.0f deg    REFLECTION %d x %d" % [
+	status_label.text = "HAND MIRROR  %s    YAW %+04.0f deg    PITCH %+04.0f deg    FACING PAIR %s    REFLECTION %d x %d" % [
 		mode,
 		tilt.x,
 		tilt.y,
+		"ON" if inter_mirror_reflections_enabled else "OFF",
 		handheld_mirror.reflection_viewport.size.x if handheld_mirror.reflection_viewport else 0,
 		handheld_mirror.reflection_viewport.size.y if handheld_mirror.reflection_viewport else 0,
 	]

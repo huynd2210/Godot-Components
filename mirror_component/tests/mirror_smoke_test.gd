@@ -41,8 +41,30 @@ func _run() -> void:
 	if not mirror.reflected_camera.global_position.is_equal_approx(reflected):
 		_fail("The internal camera should occupy the reflected source position.")
 		return
-	if mirror.reflected_camera.get_cull_mask_value(mirror.reflection_layer):
-		_fail("Reflection cameras must exclude mirror display surfaces to prevent recursion.")
+	var own_mirror_layer := mirror.get_assigned_reflection_layer()
+	if mirror.reflected_camera.get_cull_mask_value(own_mirror_layer):
+		_fail("A reflection camera must always exclude its own complete mirror object.")
+		return
+	mirror.reflection_extra_cull_mask = 1 << 1
+	var other_mirror: Mirror3D = MirrorScript.new()
+	other_mirror.source_camera = camera
+	other_mirror.position = Vector3(2.0, 0.0, 0.0)
+	world.add_child(other_mirror)
+	await process_frame
+	var other_mirror_layer := other_mirror.get_assigned_reflection_layer()
+	if other_mirror_layer == own_mirror_layer:
+		_fail("Auto-assigned mirrors should receive unique self-exclusion layers.")
+		return
+	mirror.reflect_other_mirrors = true
+	mirror.update_reflection()
+	if not mirror.reflected_camera.get_cull_mask_value(2):
+		_fail("Reflection-only objects should be added through reflection_extra_cull_mask.")
+		return
+	if not mirror.reflected_camera.get_cull_mask_value(other_mirror_layer):
+		_fail("reflect_other_mirrors should include other reflective surfaces.")
+		return
+	if mirror.reflected_camera.get_cull_mask_value(own_mirror_layer):
+		_fail("Enabling inter-mirror feedback must never reveal the mirror itself.")
 		return
 
 	var handheld: HandheldMirror3D = HandheldScript.new()
@@ -73,8 +95,37 @@ func _run() -> void:
 	if demo.get_node_or_null("Player/Camera3D/HandheldMirror3D") == null:
 		_fail("The demo should contain a first-person handheld mirror.")
 		return
+	if demo.get_node_or_null("Player/BeanPlayerModel") == null:
+		_fail("The demo player should contain the reflection-only bean model.")
+		return
+	var demo_camera := demo.get_node("Player/Camera3D") as Camera3D
+	var bean_body := demo.get_node("Player/BeanPlayerModel/Body") as MeshInstance3D
+	var demo_handheld := demo.get_node("Player/Camera3D/HandheldMirror3D") as HandheldMirror3D
+	if demo_camera.get_cull_mask_value(2) or not bean_body.get_layer_mask_value(2):
+		_fail("The bean should be hidden from the first-person camera on layer 2.")
+		return
+	if not demo_handheld.reflected_camera.get_cull_mask_value(2):
+		_fail("The handheld reflection camera should add the bean layer back.")
+		return
 	if demo.get_node_or_null("WallMirror") == null or demo.get_node_or_null("StandingMirror") == null:
 		_fail("The demo should contain reusable stationary mirrors.")
+		return
+	if demo.get_node_or_null("FacingMirrorLeft") == null or demo.get_node_or_null("FacingMirrorRight") == null:
+		_fail("The demo should contain the facing mirror feedback pair.")
+		return
+	var facing_left := demo.get_node("FacingMirrorLeft") as Mirror3D
+	var facing_right := demo.get_node("FacingMirrorRight") as Mirror3D
+	if not facing_left.reflect_other_mirrors:
+		_fail("The demo facing pair should start with inter-mirror feedback enabled.")
+		return
+	if facing_left.get_assigned_reflection_layer() == facing_right.get_assigned_reflection_layer():
+		_fail("Facing mirrors must have different self-exclusion layers.")
+		return
+	if facing_left.reflected_camera.get_cull_mask_value(facing_left.get_assigned_reflection_layer()):
+		_fail("The left facing mirror should not see itself.")
+		return
+	if not facing_left.reflected_camera.get_cull_mask_value(facing_right.get_assigned_reflection_layer()):
+		_fail("The left facing mirror should see the right facing mirror.")
 		return
 
 	print("Mirror3D smoke test passed.")
