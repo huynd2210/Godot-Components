@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/mirror_3d/handheld_mirror_3d.gd" id="1_handheld"]
+
+[node name="HandheldMirror3D" type="Node3D"]
+script = ExtResource("1_handheld")
+mirror_size = Vector2(0.42, 0.56)
+texture_width = 384
+frame_width = 0.038
+frame_depth = 0.04
+show_handle = true
+handle_length = 0.28

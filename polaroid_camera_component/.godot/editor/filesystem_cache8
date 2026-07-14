@@ -1,0 +1,12 @@
+ea4bc82a6ad023ab7ee23ee620429895
+::res://::1783960392
+README.md::TextFile::-1::1783954482::0::1::::<><>::
+::res://addons/::1783954482
+::res://addons/polaroid_camera/::1783954482
+plugin.gd::GDScript::-1::1783954482::0::1::::<>EditorPlugin<>::
+polaroid_camera_3d.gd::GDScript::-1::1783954482::0::1::::PolaroidCamera3D<>Node3D<>::
+::res://examples/::1783954482
+polaroid_camera_demo.gd::GDScript::-1::1783960385::0::1::::<>Node3D<>::
+polaroid_camera_demo.tscn::PackedScene::-1::1783954544::0::1::::<><>::res://examples/polaroid_camera_demo.gd<>res://addons/polaroid_camera/polaroid_camera_3d.gd
+::res://tests/::1783954482
+polaroid_camera_smoke_test.gd::GDScript::-1::1783954665::0::1::::<>SceneTree<>::
